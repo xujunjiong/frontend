@@ -14,4 +14,11 @@ export default [
       globals: { ...globals.node },
     },
   },
+  {
+    files: ["**/*.cjs"],
+    languageOptions: {
+      sourceType: "commonjs",
+      globals: { ...globals.node },
+    },
+  },
 ];
