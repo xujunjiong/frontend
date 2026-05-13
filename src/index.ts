@@ -16,6 +16,7 @@ app.post("/run-agent", async (c) => {
     const ressult = await runAgent(message);
     return c.json({ result: ressult });
   } catch (error) {
+    console.error("[/run-agent] error:", error);  // 服务端日志
     return c.json({ error: "Failed to run agent" }, 500);
   }
 });
