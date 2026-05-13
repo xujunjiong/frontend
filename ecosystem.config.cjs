@@ -1,0 +1,20 @@
+module.exports = {
+  apps: [
+    {
+      name: "ai-agent",
+      script: "./dist/index.js",
+      cwd: __dirname,
+      instances: 1,
+      exec_mode: "fork",
+      autorestart: true,
+      watch: false,
+      max_memory_restart: "500M",
+      env: {
+        NODE_ENV: "production",
+      },
+      out_file: "./log/out.log",
+      error_file: "./log/error.log",
+      log_date_format: "YYYY-MM-DD HH:mm:ss",
+    },
+  ],
+};

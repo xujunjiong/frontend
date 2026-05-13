@@ -2,9 +2,20 @@
   "name": "frontend",
   "version": "1.0.0",
   "main": "index.js",
+  "type": "module",
   "scripts": {
+    "dev": "tsx watch --env-file=.env src/index.ts",
+    "start": "node --env-file=.env dist/index.js",
     "test": "echo \"Error: no test specified\" && exit 1",
-     "dev": "tsx watch --env-file=.env src/index.ts"
+    "typecheck": "tsc --noEmit",
+    "build": "tsup",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "pm2:start": "pm2 start ecosystem.config.cjs",
+    "pm2:stop": "pm2 stop ai-agent",
+    "pm2:restart": "pm2 restart ai-agent",
+    "pm2:logs": "pm2 logs ai-agent",
+    "pm2:delete": "pm2 delete ai-agent"
   },
   "repository": {
     "type": "git",
@@ -25,8 +36,13 @@
     "hono": "^4.12.18"
   },
   "devDependencies": {
+    "@eslint/js": "^9.39.4",
     "@types/node": "^25.7.0",
+    "eslint": "^9.39.4",
+    "globals": "^17.6.0",
+    "tsup": "^8.5.1",
     "tsx": "^4.21.0",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "typescript-eslint": "^8.59.3"
   }
 }
