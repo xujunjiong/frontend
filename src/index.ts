@@ -3,6 +3,7 @@ import { serve } from "@hono/node-server";
 import "dotenv/config";
 
 import { runAgent } from "./agent";
+import { initTools } from "./tools";
 
 const app = new Hono();
 
@@ -20,6 +21,9 @@ app.post("/run-agent", async (c) => {
     return c.json({ error: "Failed to run agent" }, 500);
   }
 });
+
+// 启动前先把 MCP server 拉起来并注册它们暴露的工具
+await initTools();
 
 // 这里才是真正监听的地方
 serve(

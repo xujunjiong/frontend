@@ -1,6 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import { mkdir, writeFile } from "fs/promises";
-import { tools, toolDefinitions } from "./tools";
+import { tools, getToolDefinitions } from "./tools";
 import { Message } from "./types";
 
 const LOG_DIR = "log";
@@ -26,7 +26,7 @@ export async function runAgent(userMessage: string): Promise<string> {
       system: "你是一个简洁的助手。当任务需要外部能力时，调用提供的工具完成；不要做长篇思考。",
       model: process.env.ANTHROPIC_MODEL || "claude-opus-4-7",
       max_tokens: 1024, // 模型回答的最大 token 数, 可以根据需要调整
-      tools: toolDefinitions,
+      tools: getToolDefinitions(),
       messages,
     });
 
@@ -39,21 +39,21 @@ export async function runAgent(userMessage: string): Promise<string> {
       content: response.content,
     });
 
-    // 如果llm 说结束了, 那么就直接返回
-    if (response.stop_reason === "end_turn") {
-      const textBlock = response.content.find((b) => b.type === "text");
-      return textBlock?.text ?? "（无文本回复）";
+    // 截断:话没说完,直接报错退出
+    if (response.stop_reason === "max_tokens") {
+      return "回复达到最大 token 数, 请调整模型参数以获得更长的回复";
     }
 
-    if (response.stop_reason === "tool_use") {
-      const toolResults: Anthropic.ToolResultBlockParam[] = [];
-      for (const block of response.content) {
-        if (block.type !== "tool_use") {
-          continue;
-        }
+    const toolUseBlocks = response.content.filter(
+      (b): b is Anthropic.ToolUseBlock => b.type === "tool_use"
+    );
 
+    // 1) 有工具要调:无论 stop_reason 是啥(防 provider 标错),先把工具跑了再继续
+    if (toolUseBlocks.length > 0) {
+      const toolResults: Anthropic.ToolResultBlockParam[] = [];
+      for (const block of toolUseBlocks) {
         const tool = tools[block.name];
-        const result = (await tool)
+        const result = tool
           ? await tool.execute(block.input)
           : `工具 ${block.name} 不存在`;
 
@@ -63,17 +63,18 @@ export async function runAgent(userMessage: string): Promise<string> {
           content: result,
         });
       }
-
-      // 把工具的结果添加到 messages 中, 以便下一轮循环时模型可以看到工具的结果
-      messages.push({
-        role: "user",
-        content: toolResults,
-      });
+      messages.push({ role: "user", content: toolResults });
+      continue;
     }
 
-    if (response.stop_reason === "max_tokens") {
-      return "回复达到最大 token 数, 请调整模型参数以获得更长的回复";
+    // 2) 模型显式暂停(扩展思考、超长任务),把 assistant 消息原样带回去下一轮
+    if (response.stop_reason === "pause_turn") {
+      continue;
     }
+
+    // 3) 真正的结束: end_turn / stop_sequence / refusal / 其它
+    const textBlock = response.content.find((b) => b.type === "text");
+    return textBlock?.text ?? "（无文本回复）";
   }
   return "Agent 达到最大循环次数";
 }

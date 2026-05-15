@@ -32,6 +32,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.96.0",
     "@hono/node-server": "^2.0.2",
+    "@modelcontextprotocol/sdk": "^1.29.0",
+    "dep-audit-mcp": "^1.0.0",
     "dotenv": "^17.4.2",
     "hono": "^4.12.18"
   },
